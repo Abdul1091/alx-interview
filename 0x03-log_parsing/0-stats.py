@@ -1,45 +1,45 @@
 #!/usr/bin/python3
-"""Reads stdin line by line and computes metrics."""
-
+""" reads stdin line by line and computes metrics """
 import sys
-import re
 
-# Regular expression to match log format
-log_pattern = re.compile(
-    r'^\S+ - \[\S+ \S+\] "GET /projects/260 HTTP/1.1" (\d{3}) (\d+)$'
-)
 
 if __name__ == "__main__":
-    status = {"200": 0, "301": 0, "400": 0, "401": 0, "403": 0, "404": 0, "405": 0, "500": 0}
+    status = {"200": 0,
+              "301": 0,
+              "400": 0,
+              "401": 0,
+              "403": 0,
+              "404": 0,
+              "405": 0,
+              "500": 0}
+    count = 1
     file_size = 0
-    count = 0
+
+    def get_line(line):
+        """ parse and grab data"""
+        try:
+            parsed_line = line.split()
+            status_code = parsed_line[-2]
+            if status_code in status.keys():
+                status[status_code] += 1
+            return int(parsed_line[-1])
+        except Exception:
+            return 0
 
     def print_stats():
-        """Print accumulated metrics."""
+        """print stats"""
         print("File size: {}".format(file_size))
-        for code in sorted(status.keys()):
-            if status[code] > 0:
-                print("{}: {}".format(code, status[code]))
+        for key in sorted(status.keys()):
+            if status[key]:
+                print("{}: {}".format(key, status[key]))
 
     try:
         for line in sys.stdin:
-            count += 1
-            match = log_pattern.match(line)
-            if match:
-                status_code = match.group(1)
-                size = int(match.group(2))
-                file_size += size
-                if status_code in status:
-                    status[status_code] += 1
-            
-            # Print stats every 10 lines
+            file_size += get_line(line)
             if count % 10 == 0:
                 print_stats()
-
+            count += 1
     except KeyboardInterrupt:
-        # On interrupt, print the final stats and exit
         print_stats()
-        sys.exit(0)
-
-    # Final print after reading all input
+        raise
     print_stats()
